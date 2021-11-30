@@ -1,0 +1,83 @@
+#!/bin/sh
+#
+# ssgs - A simple static blog generator written in POSIX sh.
+#
+# Copyright (C) 2021 - Ricardo García Jiménez <ricardogj08@riseup.net>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this software except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Muestra mensajes de errores.
+errors() {
+  printf '%s.\n' "$1" >&2
+  exit 1
+}
+
+# Muestra un mensaje de ayuda.
+shelp() { printf '%s' "\
+ssgs 1.0 - A simple static blog generator written in POSIX sh.
+
+Synopsis:
+  ssgs [OPTION]
+
+Options:
+  -b - Build blog.
+"
+exit 0
+}
+
+main() {
+  [ "$1" != '-b' ] && shelp
+
+  command -v smu 2>/dev/null >&2 ||
+    errors "'smu' not found"
+
+  # Define la ruta del archivo de configuración
+  # y los directorios de trabajo.
+  config=${PWD}/ssgs.config
+  build=${PWD}/build
+  src=${PWD}/src
+
+  mkdir -p "$build" "$src" 2>/dev/null ||
+    errors "Could not create working directories"
+
+  cp -R -f "$src"/. "$build" 2>/dev/null ||
+    errors "Could not access 'src' or 'build' directory"
+
+  cd "$build" || :
+
+  # shellcheck source=/dev/null
+  [ -r "$config" ] && . "$config"
+
+  # Configuración por defecto.
+  : "${ssgs_lang:=en}"
+  : "${ssgs_style:=https://cdn.jsdelivr.net/npm/markdown-retro@0.0.1/css/retro.css}"
+  : "${ssgs_url:=$build}"
+  : "${ssgs_title:=ssgs blog}"
+  : "${ssgs_subtitle:=A blog about shell scripting}"
+  : "${ssgs_all_posts:=All posts}"
+  : "${ssgs_new_posts:=New posts}"
+  : "${ssgs_posts:=10}"
+  : "${ssgs_license:=Licensed under CC BY-SA 4.0}"
+
+  # Obtiene todas las publicaciones ordenadas por fecha de modificación.
+  posts=$(cd "$src" && find . -type f -name '*.md' -exec ls -t {} +)
+
+  ssgs_url=${ssgs_url%${ssgs_url##*[!/]}}
+
+  index=index.html
+  all_posts=all-posts.html
+  feed=atom.xml
+}
+
+main "$@"
