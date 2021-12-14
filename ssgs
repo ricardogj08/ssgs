@@ -36,6 +36,30 @@ Options:
 exit 0
 }
 
+# Obtiene el primer título principal de una página.
+get_title() {
+  title=$(printf '%s\n' "$1" | grep -e '^<h1>' | head -n 1)
+
+  title=${title#<h1>}
+  title=${title%</h1>}
+
+  printf '%s\n' "$title"
+}
+
+# Genera una barra de navegación.
+render_navbar() {
+  printf '<a href="%s/%s">%s</a>\n' "$ssgs_url" "$index" "$ssgs_new_posts"
+  printf '<a href="%s/%s">%s</a>\n' "$ssgs_url" "$all_posts" "$ssgs_all_posts"
+
+  [ "$ssgs_navbar" ] && for file in $ssgs_navbar; do
+    post_body=$(smu ./"$file".md 2>/dev/null)
+
+    post_title=$(get_title "$post_body")
+
+    printf '<a href="%s/%s.html">%s</a>\n' "$ssgs_url" "$file" "$post_title"
+  done
+}
+
 main() {
   [ "$1" != '-b' ] && shelp
 
@@ -56,6 +80,9 @@ main() {
 
   cd "$build" || :
 
+  # Obtiene todas las publicaciones ordenadas por fecha de modificación.
+  posts=$(cd "$src" && find . -type f -name '*.md' -exec ls -t {} +)
+
   # shellcheck source=/dev/null
   [ -r "$config" ] && . "$config"
 
@@ -70,14 +97,13 @@ main() {
   : "${ssgs_posts:=10}"
   : "${ssgs_license:=Licensed under CC BY-SA 4.0}"
 
-  # Obtiene todas las publicaciones ordenadas por fecha de modificación.
-  posts=$(cd "$src" && find . -type f -name '*.md' -exec ls -t {} +)
-
   ssgs_url=${ssgs_url%${ssgs_url##*[!/]}}
 
   index=index.html
   all_posts=all-posts.html
   feed=atom.xml
+
+  navbar=$(render_navbar)
 }
 
 main "$@"
