@@ -60,6 +60,94 @@ render_navbar() {
   done
 }
 
+# Define el maquetado base de una página web.
+template() { cat << EOF
+<!DOCTYPE html>
+<html lang="${ssgs_lang}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="${ssgs_style}">
+<title>${post_title}</title>
+</head>
+<body>
+<header>
+<h1><a href="${ssgs_url}/${index}">${ssgs_title}</a></h1>
+<p>${ssgs_subtitle}</p>
+<nav>
+${navbar}
+</nav>
+</header>
+<main>
+<article>
+${post_body}
+</article>
+</main>
+<footer>
+<p>${ssgs_license}</p>
+<p>Generated with <a href="https://github.com/ricardogj08/ssgs" target="_blank">ssgs</a>, a simple static blog generator written in POSIX sh.</p>
+</footer>
+</body>
+</html>
+EOF
+}
+
+# Define el maquetado inicial para 'index' y 'all-posts'.
+init_page() { printf '<h1>%s</h1>\n<ul>\n' "$1"; }
+
+# Define el cierre de maquetado para 'index' y 'all-posts'.
+end_page() { printf '%s\n</ul>\n' "$1"; }
+
+# Añade un nuevo artículo a la lista.
+item() { printf '%s\n<li><a href="%s">%s</a></li>\n' "$1" "$2" "$3"; }
+
+# Renderiza todas las páginas Markdown a HTML.
+render_pages() {
+  all_posts_body=$(init_page "$ssgs_all_posts")
+  index_body=$(init_page "$ssgs_new_posts")
+
+  itr=0
+
+  for post in $posts; do
+    # Cambia la extensión de un archivo Markdown a HTML.
+    post_path=${post%.md}.html
+
+    # Define la URL de la publicación.
+    post_url=${ssgs_url}/${post_path#./}
+
+    # Convierte el contenido de un archivo Markdown a HTML.
+    post_body=$(smu "$post" 2>/dev/null)
+
+    post_title=$(get_title "$post_body")
+
+    # Renombra el archivo Markdown a HTML.
+    mv "$post" "$post_path"
+
+    # Renderiza la página HTML.
+    template > "$post_path"
+
+    # Agrega una nueva publicación a 'all-posts'.
+    all_posts_body=$(item "$all_posts_body" "$post_url" "$post_title")
+
+    # Agrega una nueva publicación a 'index' y una nueva entrada a 'feed_entries'.
+    [ "$itr" -lt "$ssgs_posts" ] && {
+      index_body=$(item "$index_body" "$post_url" "$post_title")
+
+      itr=$((itr + 1))
+    }
+  done
+
+  # Renderiza la página de 'all-posts'.
+  post_title=${ssgs_all_posts}
+  post_body=$(end_page "$all_posts_body")
+  template > ./"$all_posts"
+
+  # Renderiza la página de 'index'.
+  post_title=${ssgs_title}
+  post_body=$(end_page "$index_body")
+  template > ./"$index"
+}
+
 main() {
   [ "$1" != '-b' ] && shelp
 
@@ -104,6 +192,8 @@ main() {
   feed=atom.xml
 
   navbar=$(render_navbar)
+
+  render_pages
 }
 
 main "$@"
