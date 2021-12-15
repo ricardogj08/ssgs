@@ -58,6 +58,8 @@ render_navbar() {
 
     printf '<a href="%s/%s.html">%s</a>\n' "$ssgs_url" "$file" "$post_title"
   done
+
+  printf '<a href="%s/%s">Feed</a>\n' "$ssgs_url" "$feed"
 }
 
 # Define el maquetado base de una página web.
@@ -99,7 +101,11 @@ init_page() { printf '<h1>%s</h1>\n<ul>\n' "$1"; }
 end_page() { printf '%s\n</ul>\n' "$1"; }
 
 # Añade un nuevo artículo a la lista.
-item() { printf '%s\n<li><a href="%s">%s</a></li>\n' "$1" "$2" "$3"; }
+item() { printf '%s\n<li>%s - <a href="%s">%s</a></li>\n' "$1" "$2" "$3" "$4"; }
+
+# Obtiene la fecha de modificación de un archivo.
+# Si 'date -r' falla, utiliza la fecha actual.
+pdate() { LC_ALL=C date -r "$1" "$2" 2>/dev/null || LC_ALL=C date "$2"; }
 
 # Renderiza todas las páginas Markdown a HTML.
 render_pages() {
@@ -126,12 +132,15 @@ render_pages() {
     # Renderiza la página HTML.
     template > "$post_path"
 
+    # Fecha de la publicación.
+    post_date=$(pdate "$post" "$post_date_format")
+
     # Agrega una nueva publicación a 'all-posts'.
-    all_posts_body=$(item "$all_posts_body" "$post_url" "$post_title")
+    all_posts_body=$(item "$all_posts_body" "$post_date" "$post_url" "$post_title")
 
     # Agrega una nueva publicación a 'index' y una nueva entrada a 'feed_entries'.
     [ "$itr" -lt "$ssgs_posts" ] && {
-      index_body=$(item "$index_body" "$post_url" "$post_title")
+      index_body=$(item "$index_body" "$post_date" "$post_url" "$post_title")
 
       itr=$((itr + 1))
     }
@@ -163,7 +172,7 @@ main() {
   mkdir -p "$build" "$src" 2>/dev/null ||
     errors "Could not create working directories"
 
-  cp -R -f "$src"/. "$build" 2>/dev/null ||
+  cp -R -fp "$src"/. "$build" 2>/dev/null ||
     errors "Could not access 'src' or 'build' directory"
 
   cd "$build" || :
@@ -190,6 +199,8 @@ main() {
   index=index.html
   all_posts=all-posts.html
   feed=atom.xml
+
+  post_date_format=+%Y-%m-%d
 
   navbar=$(render_navbar)
 
