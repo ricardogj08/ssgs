@@ -62,7 +62,7 @@ render_navbar() {
   printf '<a href="%s">Feed</a>\n' "$feed_url"
 }
 
-# Genera el maquetado base de una página web.
+# Genera el maquetado completo de una página web.
 template() { cat << EOF
 <!DOCTYPE html>
 <html lang="${ssgs_lang}">
@@ -94,20 +94,20 @@ ${post_body}
 EOF
 }
 
-# Define el maquetado inicial para 'index' y 'all-posts'.
+# Define el maquetado inicial para 'index.html' y 'all-posts.html'.
 init_page() { printf '<h1>%s</h1>\n<ul>\n' "$1"; }
 
-# Define el cierre de maquetado para 'index' y 'all-posts'.
+# Define el cierre del maquetado para 'index.html' y 'all-posts.html'.
 end_page() { printf '%s\n</ul>\n' "$1"; }
 
-# Añade un nuevo artículo a la lista.
+# Agrega una nueva publicación en la lista.
 item() { printf '%s\n<li>%s - <a href="%s">%s</a></li>\n' "$1" "$2" "$3" "$4"; }
 
 # Obtiene la fecha de modificación de un archivo.
 # Si 'date -r' falla, utiliza la fecha actual.
 pdate() { LC_ALL=C date -r "$1" "$2" 2>/dev/null || LC_ALL=C date "$2"; }
 
-# Genera el maquetado base de un feed de Atom.
+# Genera el maquetado completo de un feed de Atom.
 atom_feed() { cat << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="${ssgs_lang}">
@@ -153,10 +153,10 @@ render_pages() {
     # Renderiza la página HTML.
     template > "$post_path"
 
-    # Agrega una nueva publicación a 'all-posts'.
+    # Agrega una nueva publicación en 'all-posts.html'.
     all_posts_body=$(item "$all_posts_body" "$post_date" "$post_url" "$post_title")
 
-    # Agrega una nueva publicación a 'index' y una nueva entrada a 'feed_entries'.
+    # Agrega una nueva publicación en 'index.html' y una nueva entrada en 'entries'.
     [ "$itr" -lt "$ssgs_posts" ] && {
       index_body=$(item "$index_body" "$post_date" "$post_url" "$post_title")
 
@@ -166,12 +166,12 @@ render_pages() {
     }
   done
 
-  # Renderiza la página de 'all-posts'.
+  # Renderiza la página 'all-posts.html'.
   post_title=${ssgs_all_posts}
   post_body=$(end_page "$all_posts_body")
   template > "$all_posts"
 
-  # Renderiza la página de 'index'.
+  # Renderiza la página 'index.html'.
   post_title=${ssgs_title}
   post_body=$(end_page "$index_body")
   template > "$index"
