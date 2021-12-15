@@ -125,10 +125,27 @@ ${entries}
 EOF
 }
 
+# Genera todas las entradas del feed de Atom.
+entry() { [ "$1" ] && printf '%s\n' "$1"
+cat << EOF
+<entry>
+  <id>${post_url}</id>
+  <title>${post_title}</title>
+  <updated>${entry_date}</updated>
+  <author>
+    <name>${ssgs_title}</name>
+  </author>
+  <link rel="alternate" href="${post_url}"/>
+</entry>
+EOF
+}
+
 # Renderiza todas las páginas Markdown a HTML.
 render_pages() {
   all_posts_body=$(init_page "$ssgs_all_posts")
   index_body=$(init_page "$ssgs_new_posts")
+
+  entries=''
 
   itr=0
 
@@ -147,23 +164,25 @@ render_pages() {
     # Fecha de la publicación.
     post_date=$(pdate "$post" "$post_date_format")
 
+    # Agrega una nueva publicación en 'all-posts.html'.
+    all_posts_body=$(item "$all_posts_body" "$post_date" "$post_url" "$post_title")
+
+    # Agrega una nueva publicación en 'index.html' y una nueva entrada en 'atom.xml'.
+    [ "$itr" -lt "$ssgs_posts" ] && {
+      index_body=$(item "$index_body" "$post_date" "$post_url" "$post_title")
+
+      entry_date=$(pdate "$post" "$feed_date_format")
+
+      entries=$(entry "$entries")
+
+      itr=$((itr + 1))
+    }
+
     # Renombra el archivo Markdown a HTML.
     mv "$post" "$post_path"
 
     # Renderiza la página HTML.
     template > "$post_path"
-
-    # Agrega una nueva publicación en 'all-posts.html'.
-    all_posts_body=$(item "$all_posts_body" "$post_date" "$post_url" "$post_title")
-
-    # Agrega una nueva publicación en 'index.html' y una nueva entrada en 'entries'.
-    [ "$itr" -lt "$ssgs_posts" ] && {
-      index_body=$(item "$index_body" "$post_date" "$post_url" "$post_title")
-
-      entry_date=$(pdate "$post" "$post_date_format")
-
-      itr=$((itr + 1))
-    }
   done
 
   # Renderiza la página 'all-posts.html'.
