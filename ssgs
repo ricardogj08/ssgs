@@ -46,20 +46,23 @@ get_title() {
   printf '%s\n' "$title"
 }
 
+# Genera un enlace HTML.
+render_link() { printf '<a href="%s%s">%s</a>\n' "$ssgs_url" "$1" "$2"; }
+
 # Genera una barra de navegación.
 render_navbar() {
-  printf '<a href="%s%s">%s</a>\n' "$ssgs_url" "$index" "$ssgs_new_posts"
-  printf '<a href="%s%s">%s</a>\n' "$ssgs_url" "$all_posts" "$ssgs_all_posts"
+  render_link "$index" "$ssgs_new_posts"
+  render_link "$all_posts" "$ssgs_all_posts"
 
   [ "$ssgs_navbar" ] && for file in $ssgs_navbar; do
     post_body=$(smu "$file".md 2>/dev/null)
 
     post_title=$(get_title "$post_body")
 
-    printf '<a href="%s%s.html">%s</a>\n' "$ssgs_url" "$file" "$post_title"
+    render_url "$file.html" "$post_title"
   done
 
-  printf '<a href="%s">Feed</a>\n' "$feed_url"
+  render_link "$feed" "Feed"
 }
 
 # Genera el maquetado completo de una página web.
