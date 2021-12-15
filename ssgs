@@ -48,21 +48,21 @@ get_title() {
 
 # Genera una barra de navegación.
 render_navbar() {
-  printf '<a href="%s/%s">%s</a>\n' "$ssgs_url" "$index" "$ssgs_new_posts"
-  printf '<a href="%s/%s">%s</a>\n' "$ssgs_url" "$all_posts" "$ssgs_all_posts"
+  printf '<a href="%s%s">%s</a>\n' "$ssgs_url" "$index" "$ssgs_new_posts"
+  printf '<a href="%s%s">%s</a>\n' "$ssgs_url" "$all_posts" "$ssgs_all_posts"
 
   [ "$ssgs_navbar" ] && for file in $ssgs_navbar; do
-    post_body=$(smu ./"$file".md 2>/dev/null)
+    post_body=$(smu "$file".md 2>/dev/null)
 
     post_title=$(get_title "$post_body")
 
-    printf '<a href="%s/%s.html">%s</a>\n' "$ssgs_url" "$file" "$post_title"
+    printf '<a href="%s%s.html">%s</a>\n' "$ssgs_url" "$file" "$post_title"
   done
 
-  printf '<a href="%s/%s">Feed</a>\n' "$ssgs_url" "$feed"
+  printf '<a href="%s">Feed</a>\n' "$feed_url"
 }
 
-# Define el maquetado base de una página web.
+# Genera el maquetado base de una página web.
 template() { cat << EOF
 <!DOCTYPE html>
 <html lang="${ssgs_lang}">
@@ -74,7 +74,7 @@ template() { cat << EOF
 </head>
 <body>
 <header>
-<h1><a href="${ssgs_url}/${index}">${ssgs_title}</a></h1>
+<h1><a href="${ssgs_url}${index}">${ssgs_title}</a></h1>
 <p>${ssgs_subtitle}</p>
 <nav>
 ${navbar}
@@ -107,6 +107,24 @@ item() { printf '%s\n<li>%s - <a href="%s">%s</a></li>\n' "$1" "$2" "$3" "$4"; }
 # Si 'date -r' falla, utiliza la fecha actual.
 pdate() { LC_ALL=C date -r "$1" "$2" 2>/dev/null || LC_ALL=C date "$2"; }
 
+# Genera el maquetado base de un feed de Atom.
+atom_feed() { cat << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="${ssgs_lang}">
+<id>${feed_url}</id>
+<title>${ssgs_title}</title>
+<updated>$(LC_ALL=C date "$feed_date_format")</updated>
+<author>
+  <name>${ssgs_title}</name>
+</author>
+<link rel="self" href="${feed_url}" type="application/atom+xml"/>
+<link rel="alternate" href="${ssgs_url}"/>
+<generator uri="https://github.com/ricardogj08/ssgs" version="1.0">ssgs</generator>
+${entries}
+</feed>
+EOF
+}
+
 # Renderiza todas las páginas Markdown a HTML.
 render_pages() {
   all_posts_body=$(init_page "$ssgs_all_posts")
@@ -119,21 +137,21 @@ render_pages() {
     post_path=${post%.md}.html
 
     # Define la URL de la publicación.
-    post_url=${ssgs_url}/${post_path#./}
+    post_url=${ssgs_url}${post_path#./}
 
     # Convierte el contenido de un archivo Markdown a HTML.
     post_body=$(smu "$post" 2>/dev/null)
 
     post_title=$(get_title "$post_body")
 
+    # Fecha de la publicación.
+    post_date=$(pdate "$post" "$post_date_format")
+
     # Renombra el archivo Markdown a HTML.
     mv "$post" "$post_path"
 
     # Renderiza la página HTML.
     template > "$post_path"
-
-    # Fecha de la publicación.
-    post_date=$(pdate "$post" "$post_date_format")
 
     # Agrega una nueva publicación a 'all-posts'.
     all_posts_body=$(item "$all_posts_body" "$post_date" "$post_url" "$post_title")
@@ -142,6 +160,8 @@ render_pages() {
     [ "$itr" -lt "$ssgs_posts" ] && {
       index_body=$(item "$index_body" "$post_date" "$post_url" "$post_title")
 
+      entry_date=$(pdate "$post" "$post_date_format")
+
       itr=$((itr + 1))
     }
   done
@@ -149,12 +169,15 @@ render_pages() {
   # Renderiza la página de 'all-posts'.
   post_title=${ssgs_all_posts}
   post_body=$(end_page "$all_posts_body")
-  template > ./"$all_posts"
+  template > "$all_posts"
 
   # Renderiza la página de 'index'.
   post_title=${ssgs_title}
   post_body=$(end_page "$index_body")
-  template > ./"$index"
+  template > "$index"
+
+  # Renderiza el feed de Atom.
+  atom_feed > "$feed"
 }
 
 main() {
@@ -194,13 +217,16 @@ main() {
   : "${ssgs_posts:=10}"
   : "${ssgs_license:=Licensed under CC BY-SA 4.0}"
 
-  ssgs_url=${ssgs_url%${ssgs_url##*[!/]}}
+  ssgs_url=${ssgs_url%${ssgs_url##*[!/]}}/
 
   index=index.html
   all_posts=all-posts.html
   feed=atom.xml
 
+  feed_url=${ssgs_url}${feed}
+
   post_date_format=+%Y-%m-%d
+  feed_date_format=+%Y-%m-%dT%H:%M:%SZ
 
   navbar=$(render_navbar)
 
