@@ -25,7 +25,7 @@ errors() {
 
 # Muestra un mensaje de ayuda.
 shelp() { printf '%s' "\
-ssgs 1.0 - A simple static blog generator written in POSIX sh.
+ssgs 1.1 - A simple static blog generator written in POSIX sh.
 
 Synopsis:
   ssgs [OPTION]
@@ -59,7 +59,7 @@ render_navbar() {
 
     post_title=$(get_title "$post_body")
 
-    render_url "$file.html" "$post_title"
+    render_link "$file.html" "$post_title"
   done
 
   render_link "$feed" "Feed"
@@ -90,7 +90,7 @@ ${post_body}
 </main>
 <footer>
 <p>${ssgs_license}</p>
-<p>Generated with <a href="https://github.com/ricardogj08/ssgs" target="_blank">ssgs</a>, a simple static blog generator written in POSIX sh.</p>
+<p>Generated with <a href="https://github.com/ricardogj08/ssgs" target="_blank">ssgs</a>, a simple static blog generator written in POSIX sh</p>
 </footer>
 </body>
 </html>
@@ -122,7 +122,7 @@ atom_feed() { cat << EOF
 </author>
 <link rel="self" href="${feed_url}" type="application/atom+xml"/>
 <link rel="alternate" href="${ssgs_url}"/>
-<generator uri="https://github.com/ricardogj08/ssgs" version="1.0">ssgs</generator>
+<generator uri="https://github.com/ricardogj08/ssgs" version="1.1">ssgs</generator>
 ${entries}
 </feed>
 EOF
@@ -239,7 +239,7 @@ main() {
   : "${ssgs_posts:=10}"
   : "${ssgs_license:=Licensed under CC BY-SA 4.0}"
 
-  ssgs_url=${ssgs_url%${ssgs_url##*[!/]}}/
+  ssgs_url=${ssgs_url%"${ssgs_url##*[!/]}"}/
 
   index=index.html
   all_posts=all-posts.html
