@@ -47,7 +47,7 @@ $ ssgs -b
 ```text
 ssgs - A simple static blog generator written in POSIX sh.
 
-Copyright (C) 2021 - Ricardo García Jiménez <ricardogj08@riseup.net>
+Copyright (C) 2021-2022 - Ricardo García Jiménez <ricardogj08@riseup.net>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this software except in compliance with the License.
