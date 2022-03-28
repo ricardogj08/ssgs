@@ -6,5 +6,6 @@ ssgs_subtitle='A blog about shell scripting'
 ssgs_navbar='about posts/diary'
 ssgs_all_posts='All posts'
 ssgs_new_posts='New posts'
+ssgs_feed='Feed'
 ssgs_posts=10
 ssgs_license='Licensed under CC BY-SA 4.0'
