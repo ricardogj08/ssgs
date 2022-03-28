@@ -6,7 +6,7 @@ A simple static blog generator written in POSIX `sh`.
 
 * `sh`, `bash`, `zsh` or other shell like UNIX.
 * GNU Coreutils, BusyBox, Toybox, sbase or other UNIX utilities.
-* [smu - a Simple Markup Language.](https://github.com/karlb/smu)
+* [smu - a Simple Markup Language.](https://github.com/Gottox/smu)
 
 ## Usage
 
