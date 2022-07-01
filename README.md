@@ -8,32 +8,34 @@ A simple static blog generator written in POSIX `sh`.
 * GNU Coreutils, BusyBox, Toybox, sbase or other UNIX utilities.
 * [smu - a Simple Markup Language.](https://github.com/Gottox/smu)
 
+## Installation
+
+    git clone https://github.com/ricardogj08/ssgs.git
+    cd ssgs
+    sudo cp ssgs /usr/local/bin
+
 ## Usage
 
-```bash
-$ mkdir myblog
-$ cd myblog
-$ ssgs -b
-$ cat << EOF > src/about.md
-# About me
+    mkdir myblog
+    cd myblog
+    ssgs -b
+    cat << EOF > src/about.md
+    # About me
 
-Hi everyone!
-EOF
-$ ssgs -b
-```
+    Hi everyone!
+    EOF
+    ssgs -b
 
 ## Workflow
 
-```text
-[myblog]
- ├─[build]
- ├─[src]
- └─ssgs.config
-```
+    [myblog]
+     ├─[docs]
+     ├─[src]
+     └─ssgs.cfg
 
-* `build` - Contain your HTML blog after executing `ssgs -b`
+* `docs` - Contain your HTML blog after executing `ssgs -b`
 * `src` - Write your `Markdown` articles in this directory with `*.md` extension, supports subdirectories, images, videos, audios and other files.
-* `ssgs.config` - Contain config vars for your blog, see `ssgs.config.def` file.
+* `ssgs.cfg` - Contain config vars for your blog, see `ssgs.cfg.def` file.
 
 ## Thanks
 
@@ -44,20 +46,18 @@ $ ssgs -b
 
 ## License
 
-```text
-ssgs - A simple static blog generator written in POSIX sh.
+    ssgs - A simple static blog generator written in POSIX sh.
 
-Copyright (C) 2021-2022 - Ricardo García Jiménez <ricardogj08@riseup.net>
+    Copyright (C) 2021-2022 - Ricardo García Jiménez <ricardogj08@riseup.net>
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this software except in compliance with the License.
-You may obtain a copy of the License at:
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this software except in compliance with the License.
+    You may obtain a copy of the License at:
 
-    http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
