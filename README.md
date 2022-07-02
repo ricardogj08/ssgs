@@ -2,6 +2,10 @@
 
 A simple static blog generator written in POSIX `sh`.
 
+**Screenshot:**
+
+![Screenshot](/screenshot.png?raw=true "Screenshot")
+
 ## Dependencies
 
 * `sh`, `bash`, `zsh` or other shell like UNIX.
