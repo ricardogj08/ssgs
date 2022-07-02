@@ -202,7 +202,7 @@ main() {
   #
   : "${SSGS_TITLE:=ssgs}"
   : "${SSGS_SUBTITLE:=A simple static blog generator written in POSIX sh}"
-  : "${SSGS_URL:=$docs}"
+  : "${SSGS_URL:=$PWD/docs}"
   : "${SSGS_LANG:=es}"
   : "${SSGS_CSS:=https://cdn.jsdelivr.net/npm/markdown-retro@0.0.1/css/retro.css}"
   : "${SSGS_NEWS:=News}"
