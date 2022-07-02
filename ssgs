@@ -131,6 +131,40 @@ EOF
 }
 
 #
+# Genera el encabezado del feed de Atom.
+#
+atom_header() { cat << EOF
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="${SSGS_LANG}">
+<id>${SSGS_URL}/atom.xml</id>
+<title>${SSGS_TITLE}</title>
+<updated>$(LC_ALL=C date "$FDATE")</updated>
+<author>
+  <name>${SSGS_TITLE}</name>
+</author>
+<link rel="self" href="${SSGS_URL}/atom.xml" type="application/atom+xml"/>
+<link rel="alternate" href="${SSGS_URL}"/>
+<generator uri="https://github.com/ricardogj08/ssgs" version="2.0">ssgs</generator>
+EOF
+}
+
+#
+# Genera una entrada para el feed de Atom.
+#
+entry() { cat << EOF
+<entry>
+  <id>${URL}</id>
+  <title>${TITLE}</title>
+  <updated>${DATE}</updated>
+  <author>
+    <name>${SSGS_TITLE}</name>
+  </author>
+  <link rel="alternate" href="${URL}"/>
+</entry>
+EOF
+}
+
+#
 # Construye el blog a HTML.
 #
 render() {
@@ -141,6 +175,8 @@ render() {
   NAVBAR=$(navbar)
 
   FDATE=+%Y-%m-%dT%H:%M:%SZ
+
+  atom_header > atom.xml
 
   i=0
 
@@ -171,6 +207,17 @@ render() {
     DATE=$(mdate "$article" "+%Y-%m-%d")
 
     #
+    # Agrega una entrada al feed de atom.
+    #
+    [ "$i" -lt "$SSGS_LIMIT" ] && {
+      DATE=$(mdate "$article" "$FDATE")
+
+      entry >> atom.xml
+
+      i=$((i + 1))
+    }
+
+    #
     # Renombra el archivo Markdown a HTML.
     #
     mv "$article" "$path"
@@ -180,6 +227,8 @@ render() {
     #
     template "$body" > "$path"
   done
+
+  printf '</feed>\n' >> atom.xml
 }
 
 main() {
