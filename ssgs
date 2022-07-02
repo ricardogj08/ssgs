@@ -85,7 +85,7 @@ navbar() {
 #
 # Obtiene la fecha de modificación de un archivo.
 # @param $1: Path del archivo.
-# @param $2: Formato de la fecha.
+# @param $2: Formato de fecha.
 #
 mdate() {
   #
@@ -165,6 +165,29 @@ EOF
 }
 
 #
+# Genera el cuerpo inicial para index.html y all-articles.html
+# @param $1: Tìtulo de la página.
+#
+initp() {
+  printf '<h1>%s</h1>\n<ul>\n' "$1"
+}
+
+#
+# Cierre del cuerpo para index.html y all-articles.html
+#
+endp() {
+  printf '\n</ul>\n'
+}
+
+#
+# Lista un artículo.
+#
+item() {
+  printf '\n<li>%s - <a href="%s">%s</a></li>\n' \
+    "$DATE" "$URL" "$TITLE"
+}
+
+#
 # Construye el blog a HTML.
 #
 render() {
@@ -175,6 +198,9 @@ render() {
   NAVBAR=$(navbar)
 
   FDATE=+%Y-%m-%dT%H:%M:%SZ
+
+  ibody=$(initp "$SSGS_NEWS")
+  abody=$(initp "$SSGS_ALL")
 
   atom_header > atom.xml
 
@@ -207,9 +233,19 @@ render() {
     DATE=$(mdate "$article" "+%Y-%m-%d")
 
     #
+    # Agrega un nuevo artículo en all-articles.html
+    #
+    abody=${abody}$(item)
+
+    #
     # Agrega una entrada al feed de atom.
     #
     [ "$i" -lt "$SSGS_LIMIT" ] && {
+      #
+      # Agrega un nuevo artículo en index.html
+      #
+      ibody=${ibody}$(item)
+
       DATE=$(mdate "$article" "$FDATE")
 
       entry >> atom.xml
@@ -227,6 +263,10 @@ render() {
     #
     template "$body" > "$path"
   done
+
+  template "${ibody}$(endp)" > index.html
+
+  template "${abody}$(endp)" > all-articles.html
 
   printf '</feed>\n' >> atom.xml
 }
