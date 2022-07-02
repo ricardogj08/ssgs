@@ -17,15 +17,19 @@
 # limitations under the License.
 #
 
+#
 # Muestra mensajes de errores.
+#
 errors() {
   printf '%s.\n' "$1" >&2
   exit 1
 }
 
+#
 # Muestra un mensaje de ayuda.
+#
 shelp() { printf '%s' "\
-ssgs 1.2 - A simple static blog generator written in POSIX sh.
+ssgs 2.0 - A simple static blog generator written in POSIX sh.
 
 Synopsis:
   ssgs [OPTION]
@@ -36,7 +40,20 @@ Options:
 exit 0
 }
 
-# Obtiene el primer título principal de una página.
+#
+# Genera un enlace HTML.
+# @param $1: Nombre del archivo.
+# @param $2: Tìtulo del enlace.
+#
+ahref() {
+  printf '<a href="%s/%s">%s</a>\n' \
+    "$SSGS_URL" "$1" "$2"
+}
+
+#
+# Obtiene el tìtulo de una página HTML.
+# @param $1: Cuerpo de la página.
+#
 get_title() {
   title=$(printf '%s\n' "$1" | grep -e '^<h1>' | head -n 1)
 
@@ -46,50 +63,66 @@ get_title() {
   printf '%s\n' "$title"
 }
 
-# Genera un enlace HTML.
-render_link() { printf '<a href="%s%s">%s</a>\n' "$ssgs_url" "$1" "$2"; }
-
+#
 # Genera una barra de navegación.
-render_navbar() {
-  render_link "$index" "$ssgs_new_posts"
-  render_link "$all_posts" "$ssgs_all_posts"
+#
+navbar() {
+  ahref "index.html" "$SSGS_NEWS"
+  ahref "all-articles.html" "$SSGS_ALL"
 
-  [ "$ssgs_navbar" ] && for file in $ssgs_navbar; do
-    post_body=$(smu "$file".md 2>/dev/null)
+  [ "$SSGS_NAVBAR" ] &&
+    for file in $SSGS_NAVBAR; do
+      body=$(smu "$file.md" 2>/dev/null)
 
-    post_title=$(get_title "$post_body")
+      title=$(get_title "$body")
 
-    render_link "$file.html" "$post_title"
-  done
+      ahref "$file.html" "$title"
+    done
 
-  render_link "$feed" "$ssgs_feed"
+  ahref "atom.xml" "$SSGS_FEED"
 }
 
+#
+# Obtiene la fecha de modificación de un archivo.
+# @param $1: Path del archivo.
+# @param $2: Formato de la fecha.
+#
+mdate() {
+  #
+  # Si 'date -r' falla, utiliza la fecha actual.
+  #
+  LC_ALL=C date -r "$1" "$2" 2>/dev/null ||
+    LC_ALL=C date "$2"
+}
+
+#
 # Genera el maquetado completo de una página web.
+# @param $1: Cuerpo de la página.
+#
 template() { cat << EOF
-<!DOCTYPE html>
-<html lang="${ssgs_lang}">
+<!doctype html>
+<html lang="${SSGS_LANG}">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="${ssgs_style}">
-<title>${post_title}</title>
+<link rel="stylesheet" href="${SSGS_CSS}" crossorigin="anonymous">
+<title>${TITLE}</title>
 </head>
 <body>
 <header>
-<h1><a href="${ssgs_url}${index}">${ssgs_title}</a></h1>
-<p>${ssgs_subtitle}</p>
+<h1><a href="${SSGS_URL}/index.html">${SSGS_TITLE}</a></h1>
+<p>${SSGS_SUBTITLE}</p>
 <nav>
-${navbar}
+${NAVBAR}
 </nav>
 </header>
 <main>
 <article>
-${post_body}
+${1}
 </article>
 </main>
 <footer>
-<p>${ssgs_license}</p>
+<p>${SSGS_LICENSE}</p>
 <p>Generated with <a href="https://github.com/ricardogj08/ssgs" target="_blank">ssgs</a>, a simple static blog generator written in POSIX sh</p>
 </footer>
 </body>
@@ -97,163 +130,90 @@ ${post_body}
 EOF
 }
 
-# Define el maquetado inicial para 'index.html' y 'all-posts.html'.
-init_page() { printf '<h1>%s</h1>\n<ul>\n' "$1"; }
+#
+# Construye el blog a HTML.
+#
+render() {
+  articles=$(cd src && find . -type f -name \*.md -exec ls -t {} +)
 
-# Define el cierre del maquetado para 'index.html' y 'all-posts.html'.
-end_page() { printf '%s\n</ul>\n' "$1"; }
+  cd docs || :
 
-# Agrega una nueva publicación en la lista.
-item() { printf '%s\n<li>%s - <a href="%s">%s</a></li>\n' "$1" "$2" "$3" "$4"; }
+  NAVBAR=$(navbar)
 
-# Obtiene la fecha de modificación de un archivo.
-# Si 'date -r' falla, utiliza la fecha actual.
-pdate() { LC_ALL=C date -r "$1" "$2" 2>/dev/null || LC_ALL=C date "$2"; }
+  FDATE=+%Y-%m-%dT%H:%M:%SZ
 
-# Genera el maquetado completo de un feed de Atom.
-atom_feed() { cat << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="${ssgs_lang}">
-<id>${feed_url}</id>
-<title>${ssgs_title}</title>
-<updated>$(LC_ALL=C date "$feed_date_format")</updated>
-<author>
-  <name>${ssgs_title}</name>
-</author>
-<link rel="self" href="${feed_url}" type="application/atom+xml"/>
-<link rel="alternate" href="${ssgs_url}"/>
-<generator uri="https://github.com/ricardogj08/ssgs" version="1.2">ssgs</generator>
-${entries}
-</feed>
-EOF
-}
+  i=0
 
-# Genera todas las entradas del feed de Atom.
-entry() { [ "$1" ] && printf '%s\n' "$1"
-cat << EOF
-<entry>
-  <id>${post_url}</id>
-  <title>${post_title}</title>
-  <updated>${entry_date}</updated>
-  <author>
-    <name>${ssgs_title}</name>
-  </author>
-  <link rel="alternate" href="${post_url}"/>
-</entry>
-EOF
-}
-
-# Renderiza todas las páginas Markdown a HTML.
-render_pages() {
-  all_posts_body=$(init_page "$ssgs_all_posts")
-  index_body=$(init_page "$ssgs_new_posts")
-
-  entries=''
-
-  itr=0
-
-  for post in $posts; do
+  for article in $articles; do
+    #
     # Cambia la extensión de un archivo Markdown a HTML.
-    post_path=${post%.md}.html
+    #
+    path=${article%.md}.html
 
-    # Define la URL de la publicación.
-    post_url=${ssgs_url}${post_path#./}
+    #
+    # URL del artículo.
+    #
+    URL=${SSGS_URL}/${path#./}
 
-    # Convierte el contenido de un archivo Markdown a HTML.
-    post_body=$(smu "$post" 2>/dev/null)
+    #
+    # Convierte el contenido del archivo a HTML.
+    #
+    body=$(smu "$article" 2>/dev/null)
 
-    post_title=$(get_title "$post_body")
+    #
+    # Título del artículo.
+    #
+    TITLE=$(get_title "$body")
 
-    # Fecha de la publicación.
-    post_date=$(pdate "$post" "$post_date_format")
+    #
+    # Fecha de modificación del artículo.
+    #
+    DATE=$(mdate "$article" "+%Y-%m-%d")
 
-    # Agrega una nueva publicación en 'all-posts.html'.
-    all_posts_body=$(item "$all_posts_body" "$post_date" "$post_url" "$post_title")
-
-    # Agrega una nueva publicación en 'index.html' y una nueva entrada en 'atom.xml'.
-    [ "$itr" -lt "$ssgs_posts" ] && {
-      index_body=$(item "$index_body" "$post_date" "$post_url" "$post_title")
-
-      entry_date=$(pdate "$post" "$feed_date_format")
-
-      entries=$(entry "$entries")
-
-      itr=$((itr + 1))
-    }
-
+    #
     # Renombra el archivo Markdown a HTML.
-    mv "$post" "$post_path"
+    #
+    mv "$article" "$path"
 
+    #
     # Renderiza la página HTML.
-    template > "$post_path"
+    #
+    template "$body" > "$path"
   done
-
-  # Renderiza la página 'all-posts.html'.
-  post_title=${ssgs_all_posts}
-  post_body=$(end_page "$all_posts_body")
-  template > "$all_posts"
-
-  # Renderiza la página 'index.html'.
-  post_title=${ssgs_title}
-  post_body=$(end_page "$index_body")
-  template > "$index"
-
-  # Renderiza el feed de Atom.
-  atom_feed > "$feed"
 }
 
 main() {
-  [ "$1" != '-b' ] && shelp
-
-  command -v smu 2>/dev/null >&2 ||
+  command -v smu >/dev/null 2>&1 ||
     errors "'smu' not found"
 
-  # Define la ruta del archivo de configuración
-  # y los directorios de trabajo.
-  config=${PWD}/ssgs.config
-  build=${PWD}/build
-  src=${PWD}/src
+  mkdir -p src docs ||
+    errors "Couldn't create blog directories"
 
-  mkdir -p "$build" "$src" 2>/dev/null ||
-    errors "Could not create working directories"
+  cp -R -fp src/. docs 2>/dev/null ||
+    errors "Couldn't access 'src' or 'docs' directory"
 
-  cp -R -fp "$src"/. "$build" 2>/dev/null ||
-    errors "Could not access 'src' or 'build' directory"
-
-  cd "$build" || :
-
-  # Obtiene todas las publicaciones ordenadas por fecha de modificación.
-  posts=$(cd "$src" && find . -type f -name '*.md' -exec ls -t {} +)
-
+  #
   # shellcheck source=/dev/null
-  [ -r "$config" ] && . "$config"
+  #
+  [ -r ssgs.cfg ] && . ./ssgs.cfg
 
+  #
   # Configuración por defecto.
-  : "${ssgs_lang:=en}"
-  : "${ssgs_style:=https://cdn.jsdelivr.net/npm/markdown-retro@0.0.1/css/retro.css}"
-  : "${ssgs_url:=$build}"
-  : "${ssgs_title:=ssgs blog}"
-  : "${ssgs_subtitle:=A blog about shell scripting}"
-  : "${ssgs_all_posts:=All posts}"
-  : "${ssgs_new_posts:=New posts}"
-  : "${ssgs_feed:=Feed}"
-  : "${ssgs_posts:=10}"
-  : "${ssgs_license:=Licensed under CC BY-SA 4.0}"
+  #
+  : "${SSGS_TITLE:=ssgs}"
+  : "${SSGS_SUBTITLE:=A simple static blog generator written in POSIX sh}"
+  : "${SSGS_URL:=$docs}"
+  : "${SSGS_LANG:=es}"
+  : "${SSGS_CSS:=https://cdn.jsdelivr.net/npm/markdown-retro@0.0.1/css/retro.css}"
+  : "${SSGS_NEWS:=News}"
+  : "${SSGS_ALL:=Articles}"
+  : "${SSGS_FEED:=Feed}"
+  : "${SSGS_LIMIT:=15}"
+  : "${SSGS_LICENSE:=Licensed under CC BY-SA 4.0}"
 
-  ssgs_url=${ssgs_url%"${ssgs_url##*[!/]}"}/
+  SSGS_URL=${SSGS_URL%/}
 
-  index=index.html
-  all_posts=all-posts.html
-  feed=atom.xml
-
-  feed_url=${ssgs_url}${feed}
-
-  post_date_format=+%Y-%m-%d
-  feed_date_format=+%Y-%m-%dT%H:%M:%SZ
-
-  navbar=$(render_navbar)
-
-  render_pages
+  render
 }
 
-main "$@"
+[ "$1" = -b ] || shelp && main
