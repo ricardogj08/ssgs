@@ -37,9 +37,9 @@ A simple static blog generator written in POSIX `sh`.
      ├─[src]
      └─ssgs.cfg
 
-* `docs` - Contain your HTML blog after executing `ssgs -b`
+* `docs` - Contains your HTML blog after executing `ssgs -b`
 * `src` - Write your `Markdown` articles in this directory with `*.md` extension, supports subdirectories, images, videos, audios and other files.
-* `ssgs.cfg` - Contain config vars for your blog, see `ssgs.cfg.def` file.
+* `ssgs.cfg` - Contains config vars for your blog, see `ssgs.cfg.def` file.
 
 ## Thanks
 
